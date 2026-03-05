@@ -18,6 +18,7 @@ import ChatRoom from './pages/ChatRoom';
 import OrderList from './pages/OrderList';
 import OrderDetail from './pages/OrderDetail';
 import Profile from './pages/Profile';
+import CartPage from './pages/CartPage';
 
 // Theme
 const theme = createTheme({
@@ -104,85 +105,86 @@ function App() {
             <Route path="/" element={<Navigate to="/marketplace" replace />} />
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
-            
+
             {/* Buyer Routes */}
             <Route path="/marketplace" element={<Marketplace />} />
             <Route path="/products/:id" element={<ProductDetail />} />
-            
+            <Route path="/cart" element={<CartPage />} />
+
             {/* Protected Routes */}
-            <Route 
-              path="/chats" 
+            <Route
+              path="/chats"
               element={
                 <ProtectedRoute>
                   <ChatList />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/chats/:id" 
+            <Route
+              path="/chats/:id"
               element={
                 <ProtectedRoute>
                   <ChatRoom />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/orders" 
+            <Route
+              path="/orders"
               element={
                 <ProtectedRoute>
                   <OrderList />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/orders/:id" 
+            <Route
+              path="/orders/:id"
               element={
                 <ProtectedRoute>
                   <OrderDetail />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/profile" 
+            <Route
+              path="/profile"
               element={
                 <ProtectedRoute>
                   <Profile />
                 </ProtectedRoute>
-              } 
+              }
             />
 
             {/* Farmer Only Routes */}
-            <Route 
-              path="/farmer/dashboard" 
+            <Route
+              path="/farmer/dashboard"
               element={
                 <ProtectedRoute requiredRole="farmer">
                   <FarmerDashboard />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/farmer/create-listing" 
+            <Route
+              path="/farmer/create-listing"
               element={
                 <ProtectedRoute requiredRole="farmer">
                   <CreateListing />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/farmer/edit-listing/:id" 
+            <Route
+              path="/farmer/edit-listing/:id"
               element={
                 <ProtectedRoute requiredRole="farmer">
                   <CreateListing />
                 </ProtectedRoute>
-              } 
+              }
             />
 
             {/* 404 */}
             <Route path="*" element={<Navigate to="/marketplace" replace />} />
           </Routes>
-          
+
           {/* Toast Notifications */}
-          <Toaster 
+          <Toaster
             position="top-right"
             toastOptions={{
               duration: 3000,

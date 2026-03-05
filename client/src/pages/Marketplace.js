@@ -6,25 +6,29 @@ import {
   InputLabel, Box, Chip, InputAdornment, IconButton, AppBar,
   Toolbar, Avatar, Menu, MenuItem as MenuItemMui, Drawer, List,
   ListItem, ListItemIcon, ListItemText, Switch, FormControlLabel,
-  CircularProgress, Alert
+  CircularProgress, Alert, Badge
 } from '@mui/material';
 import {
   Search, FilterList, ShoppingCart, Chat, Person, Logout,
-  Menu as MenuIcon, Dashboard, Receipt, Star, LocationOn
+  Menu as MenuIcon, Dashboard, Receipt, Star, LocationOn,
+  AddShoppingCart
 } from '@mui/icons-material';
 import { productAPI } from '../services/api';
 import useStore from '../store/useStore';
 import toast from 'react-hot-toast';
+import staticProducts from '../data/products';
+import { addToCart, getCartCount } from '../utils/cartManager';
 
 function Marketplace() {
   const navigate = useNavigate();
   const { user, isAuthenticated, logout, filters, setFilters } = useStore();
-  
+
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [anchorEl, setAnchorEl] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+  const [cartCount, setCartCount] = useState(getCartCount());
 
   useEffect(() => {
     fetchProducts();
@@ -43,10 +47,24 @@ function Marketplace() {
       const response = await productAPI.getAll(params);
       setProducts(response.data.data.products);
     } catch (error) {
-      toast.error('Failed to load products');
+      // Fallback to static products when API is unavailable
+      let filtered = [...staticProducts];
+      if (filters.category) filtered = filtered.filter(p => p.category === filters.category);
+      if (filters.minPrice) filtered = filtered.filter(p => p.price >= Number(filters.minPrice));
+      if (filters.maxPrice) filtered = filtered.filter(p => p.price <= Number(filters.maxPrice));
+      if (filters.search) filtered = filtered.filter(p => p.name.toLowerCase().includes(filters.search.toLowerCase()));
+      if (filters.organic) filtered = filtered.filter(p => p.organic);
+      setProducts(filtered);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAddToCart = (e, product) => {
+    e.stopPropagation();
+    addToCart(product);
+    setCartCount(getCartCount());
+    toast.success(`${product.name || product.title} added to cart! 🛒`);
   };
 
   const handleFilterChange = (field, value) => {
@@ -76,10 +94,17 @@ function Marketplace() {
           >
             <MenuIcon />
           </IconButton>
-          
+
           <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
             🌾 FarmFresh
           </Typography>
+
+          {/* Cart Icon — always visible */}
+          <IconButton color="inherit" onClick={() => navigate('/cart')}>
+            <Badge badgeContent={cartCount} color="secondary">
+              <ShoppingCart />
+            </Badge>
+          </IconButton>
 
           {isAuthenticated ? (
             <>
@@ -129,7 +154,15 @@ function Marketplace() {
               <ListItemIcon><ShoppingCart /></ListItemIcon>
               <ListItemText primary="Marketplace" />
             </ListItem>
-            
+            <ListItem button onClick={() => { navigate('/cart'); setDrawerOpen(false); }}>
+              <ListItemIcon>
+                <Badge badgeContent={cartCount} color="secondary">
+                  <ShoppingCart />
+                </Badge>
+              </ListItemIcon>
+              <ListItemText primary="My Cart" />
+            </ListItem>
+
             {isAuthenticated && (
               <>
                 {user?.role === 'farmer' && (
@@ -153,9 +186,9 @@ function Marketplace() {
       </Drawer>
 
       {/* Filter Drawer */}
-      <Drawer 
-        anchor="right" 
-        open={filterDrawerOpen} 
+      <Drawer
+        anchor="right"
+        open={filterDrawerOpen}
         onClose={() => setFilterDrawerOpen(false)}
       >
         <Box sx={{ width: 300, p: 3 }}>
@@ -247,56 +280,58 @@ function Marketplace() {
         ) : (
           <Grid container spacing={3}>
             {products.map((product) => (
-              <Grid item xs={12} sm={6} md={4} key={product._id}>
-                <Card 
-                  sx={{ 
-                    height: '100%', 
-                    display: 'flex', 
+              <Grid item xs={12} sm={6} md={4} key={product._id || product.id}>
+                <Card
+                  sx={{
+                    height: '100%',
+                    display: 'flex',
                     flexDirection: 'column',
                     cursor: 'pointer',
-                    transition: 'transform 0.2s',
+                    transition: 'transform 0.2s, box-shadow 0.2s',
                     '&:hover': {
                       transform: 'translateY(-4px)',
-                      boxShadow: 4
+                      boxShadow: '0 12px 28px rgba(0,0,0,0.12)'
                     }
                   }}
-                  onClick={() => handleProductClick(product._id)}
+                  onClick={() => product._id ? handleProductClick(product._id) : null}
                 >
                   <CardMedia
                     component="img"
                     height="200"
-                    image={product.images[0] || 'https://via.placeholder.com/300x200?text=No+Image'}
-                    alt={product.title}
+                    image={product.image || (product.images && product.images[0]) || 'https://via.placeholder.com/300x200?text=No+Image'}
+                    alt={product.name || product.title}
                     sx={{ objectFit: 'cover' }}
                   />
                   <CardContent sx={{ flexGrow: 1 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                       <Typography variant="h6" component="div" noWrap>
-                        {product.title}
+                        {product.name || product.title}
                       </Typography>
                       {product.organic && (
                         <Chip label="Organic" size="small" color="success" />
                       )}
                     </Box>
-                    
+
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                      {product.description.substring(0, 80)}...
+                      {(product.description || '').substring(0, 80)}{product.description && product.description.length > 80 ? '...' : ''}
                     </Typography>
 
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                       <LocationOn fontSize="small" color="action" sx={{ mr: 0.5 }} />
                       <Typography variant="caption" color="text.secondary">
-                        {product.farmer?.profile?.location?.city || 'Location not set'}
+                        {product.location || product.farmer?.profile?.location?.city || 'Location not set'}
                       </Typography>
                     </Box>
 
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                       <Avatar
                         src={product.farmer?.profile?.avatar}
-                        sx={{ width: 24, height: 24, mr: 1 }}
-                      />
+                        sx={{ width: 24, height: 24, mr: 1, bgcolor: '#4caf50', fontSize: 14 }}
+                      >
+                        {(typeof product.farmer === 'string' ? product.farmer : product.farmer?.profile?.name)?.[0]?.toUpperCase()}
+                      </Avatar>
                       <Typography variant="caption">
-                        {product.farmer?.profile?.name}
+                        {typeof product.farmer === 'string' ? product.farmer : product.farmer?.profile?.name}
                       </Typography>
                       {product.farmer?.rating > 0 && (
                         <Box sx={{ display: 'flex', alignItems: 'center', ml: 1 }}>
@@ -310,15 +345,40 @@ function Marketplace() {
 
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
                       <Typography variant="h6" color="primary" fontWeight="bold">
-                        ₹{product.basePrice}/{product.unit}
+                        ₹{product.price || product.basePrice}/{product.unit}
                       </Typography>
-                      <Chip 
-                        label={`${product.availableQuantity} ${product.unit}`} 
-                        size="small" 
-                        variant="outlined"
-                      />
+                      {product.availableQuantity && (
+                        <Chip
+                          label={`${product.availableQuantity} ${product.unit}`}
+                          size="small"
+                          variant="outlined"
+                        />
+                      )}
                     </Box>
                   </CardContent>
+
+                  {/* Add to Cart Button */}
+                  <CardActions sx={{ px: 2, pb: 2, pt: 0 }}>
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      startIcon={<AddShoppingCart />}
+                      onClick={(e) => handleAddToCart(e, product)}
+                      sx={{
+                        borderRadius: 2,
+                        py: 1,
+                        fontWeight: 600,
+                        background: 'linear-gradient(135deg, #4caf50, #388e3c)',
+                        boxShadow: '0 2px 8px rgba(76, 175, 80, 0.3)',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #388e3c, #2e7d32)',
+                          boxShadow: '0 4px 12px rgba(76, 175, 80, 0.4)',
+                        }
+                      }}
+                    >
+                      Add to Cart
+                    </Button>
+                  </CardActions>
                 </Card>
               </Grid>
             ))}
