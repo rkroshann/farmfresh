@@ -60,6 +60,24 @@ router.post('/register', [
 
     store.users.push(newUser);
 
+    // Send SMS Notification with Twilio
+    if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && newUser.profile.phone) {
+      try {
+        const twilio = require('twilio');
+        const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+
+        await client.messages.create({
+          body: `Hi ${name}, welcome to FarmFresh Marketplace! Your account has been successfully registered. Happy shopping!`,
+          from: process.env.TWILIO_PHONE_NUMBER,
+          to: newUser.profile.phone
+        });
+        console.log(`Registration SMS sent to ${newUser.profile.phone}`);
+      } catch (smsError) {
+        console.error('Twilio SMS error:', smsError.message);
+        // We don't fail the registration if SMS fails, just log it
+      }
+    }
+
     const token = generateToken(newUser._id);
 
     res.status(201).json({

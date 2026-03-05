@@ -319,7 +319,7 @@ function Marketplace() {
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                       <LocationOn fontSize="small" color="action" sx={{ mr: 0.5 }} />
                       <Typography variant="caption" color="text.secondary">
-                        {product.location || product.farmer?.profile?.location?.city || 'Location not set'}
+                        {(typeof product.location === 'string' ? product.location : product.location?.city) || product.farmer?.profile?.location?.city || 'Location not set'}
                       </Typography>
                     </Box>
 
