@@ -1,8 +1,24 @@
 const express = require('express');
 const router = express.Router();
-const Chat = require('../models/Chat');
-const Product = require('../models/Product');
+const store = require('../store');
+const { v4: uuidv4 } = require('uuid');
 const { auth } = require('../middleware/auth');
+
+const populateChat = (chat) => {
+  const result = { ...chat };
+
+  result.participants = chat.participants.map(pid => {
+    const user = store.users.find(u => u._id === pid);
+    return user ? { _id: user._id, profile: user.profile, role: user.role } : null;
+  }).filter(Boolean);
+
+  const product = store.products.find(p => p._id === chat.product);
+  if (product) {
+    result.product = { _id: product._id, title: product.title, images: product.images, basePrice: product.basePrice, status: product.status, farmer: product.farmer };
+  }
+
+  return result;
+};
 
 // @route   POST /api/chats
 // @desc    Create or get existing chat
@@ -11,57 +27,46 @@ router.post('/', auth, async (req, res) => {
   try {
     const { productId, farmerId } = req.body;
 
-    // Verify product exists
-    const product = await Product.findById(productId);
+    const product = store.products.find(p => p._id === productId);
     if (!product) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Product not found' 
-      });
+      return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
-    // Check if chat already exists
-    let chat = await Chat.findOne({
-      product: productId,
-      participants: { $all: [req.userId, farmerId] }
-    }).populate('participants', 'profile.name profile.avatar role')
-      .populate('product', 'title images basePrice');
+    let chat = store.chats.find(c =>
+      c.product === productId &&
+      c.participants.includes(req.userId) &&
+      c.participants.includes(farmerId)
+    );
 
     if (chat) {
-      return res.json({
-        success: true,
-        data: { chat }
-      });
+      return res.json({ success: true, data: { chat: populateChat(chat) } });
     }
 
-    // Create new chat
-    chat = new Chat({
+    chat = {
+      _id: uuidv4(),
       participants: [req.userId, farmerId],
       product: productId,
       messages: [{
+        _id: uuidv4(),
         sender: req.userId,
         text: 'Hi! I am interested in this product.',
-        type: 'system'
+        type: 'system',
+        timestamp: new Date(),
+        read: false
       }],
       lastMessage: 'Hi! I am interested in this product.',
-      lastMessageAt: new Date()
-    });
+      lastMessageAt: new Date(),
+      status: 'active',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
 
-    await chat.save();
+    store.chats.push(chat);
 
-    await chat.populate('participants', 'profile.name profile.avatar role');
-    await chat.populate('product', 'title images basePrice');
-
-    res.status(201).json({
-      success: true,
-      data: { chat }
-    });
+    res.status(201).json({ success: true, data: { chat: populateChat(chat) } });
   } catch (error) {
     console.error('Create chat error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error' 
-    });
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 
@@ -70,24 +75,15 @@ router.post('/', auth, async (req, res) => {
 // @access  Private
 router.get('/', auth, async (req, res) => {
   try {
-    const chats = await Chat.find({
-      participants: req.userId,
-      status: 'active'
-    })
-      .populate('participants', 'profile.name profile.avatar role')
-      .populate('product', 'title images basePrice status')
-      .sort('-lastMessageAt');
+    const chats = store.chats
+      .filter(c => c.participants.includes(req.userId) && c.status === 'active')
+      .sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt))
+      .map(c => populateChat(c));
 
-    res.json({
-      success: true,
-      data: { chats }
-    });
+    res.json({ success: true, data: { chats } });
   } catch (error) {
     console.error('Get chats error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error' 
-    });
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 
@@ -96,44 +92,30 @@ router.get('/', auth, async (req, res) => {
 // @access  Private
 router.get('/:id', auth, async (req, res) => {
   try {
-    const chat = await Chat.findById(req.params.id)
-      .populate('participants', 'profile.name profile.avatar role')
-      .populate('product', 'title images basePrice farmer');
+    const chatIndex = store.chats.findIndex(c => c._id === req.params.id);
 
-    if (!chat) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Chat not found' 
-      });
+    if (chatIndex === -1) {
+      return res.status(404).json({ success: false, message: 'Chat not found' });
     }
 
-    // Check if user is participant
-    if (!chat.participants.some(p => p._id.toString() === req.userId.toString())) {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Not authorized to view this chat' 
-      });
+    const chat = store.chats[chatIndex];
+
+    if (!chat.participants.includes(req.userId)) {
+      return res.status(403).json({ success: false, message: 'Not authorized to view this chat' });
     }
 
-    // Mark messages as read
     chat.messages.forEach(msg => {
-      if (msg.sender.toString() !== req.userId.toString()) {
+      if (msg.sender !== req.userId) {
         msg.read = true;
       }
     });
 
-    await chat.save();
+    chat.updatedAt = new Date();
 
-    res.json({
-      success: true,
-      data: { chat }
-    });
+    res.json({ success: true, data: { chat: populateChat(chat) } });
   } catch (error) {
     console.error('Get chat error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error' 
-    });
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 
@@ -144,24 +126,20 @@ router.post('/:id/messages', auth, async (req, res) => {
   try {
     const { text, type = 'text', offerDetails } = req.body;
 
-    const chat = await Chat.findById(req.params.id);
+    const chatIndex = store.chats.findIndex(c => c._id === req.params.id);
 
-    if (!chat) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Chat not found' 
-      });
+    if (chatIndex === -1) {
+      return res.status(404).json({ success: false, message: 'Chat not found' });
     }
 
-    // Check if user is participant
-    if (!chat.participants.some(p => p._id.toString() === req.userId.toString())) {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Not authorized' 
-      });
+    const chat = store.chats[chatIndex];
+
+    if (!chat.participants.includes(req.userId)) {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
     }
 
     const message = {
+      _id: uuidv4(),
       sender: req.userId,
       text,
       type,
@@ -173,19 +151,12 @@ router.post('/:id/messages', auth, async (req, res) => {
     chat.messages.push(message);
     chat.lastMessage = text;
     chat.lastMessageAt = new Date();
+    chat.updatedAt = new Date();
 
-    await chat.save();
-
-    res.json({
-      success: true,
-      data: { message }
-    });
+    res.json({ success: true, data: { message } });
   } catch (error) {
     console.error('Send message error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error' 
-    });
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 
@@ -196,53 +167,38 @@ router.put('/:chatId/offers/:messageId', auth, async (req, res) => {
   try {
     const { status } = req.body; // 'accepted' or 'rejected'
 
-    const chat = await Chat.findById(req.params.chatId);
+    const chatIndex = store.chats.findIndex(c => c._id === req.params.chatId);
 
-    if (!chat) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Chat not found' 
-      });
+    if (chatIndex === -1) {
+      return res.status(404).json({ success: false, message: 'Chat not found' });
     }
 
-    const message = chat.messages.id(req.params.messageId);
+    const chat = store.chats[chatIndex];
+    const message = chat.messages.find(m => m._id === req.params.messageId);
 
     if (!message || message.type !== 'offer') {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Offer not found' 
-      });
+      return res.status(404).json({ success: false, message: 'Offer not found' });
     }
 
     message.offerDetails.status = status;
 
-    // Add system message
     chat.messages.push({
+      _id: uuidv4(),
       sender: req.userId,
-      text: status === 'accepted' 
-        ? `Offer of ₹${message.offerDetails.price} accepted` 
-        : 'Offer rejected',
+      text: status === 'accepted' ? `Offer of ₹${message.offerDetails.price} accepted` : 'Offer rejected',
       type: 'system',
-      timestamp: new Date()
+      timestamp: new Date(),
+      read: false
     });
 
-    chat.lastMessage = status === 'accepted' 
-      ? `Offer accepted: ₹${message.offerDetails.price}` 
-      : 'Offer rejected';
+    chat.lastMessage = status === 'accepted' ? `Offer accepted: ₹${message.offerDetails.price}` : 'Offer rejected';
     chat.lastMessageAt = new Date();
+    chat.updatedAt = new Date();
 
-    await chat.save();
-
-    res.json({
-      success: true,
-      data: { chat }
-    });
+    res.json({ success: true, data: { chat: populateChat(chat) } });
   } catch (error) {
     console.error('Update offer error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error' 
-    });
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 

@@ -1,6 +1,5 @@
 require('dotenv').config();
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
 const http = require('http');
 const socketIO = require('socket.io');
@@ -46,8 +45,8 @@ app.use('/api/reviews', reviewRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    success: true, 
+  res.json({
+    success: true,
     message: 'FarmFresh API is running',
     timestamp: new Date()
   });
@@ -75,17 +74,17 @@ io.on('connection', (socket) => {
   socket.on('send_message', async (data) => {
     try {
       const { chatId, message } = data;
-      
+
       // Broadcast to chat room
       io.to(chatId).emit('receive_message', message);
-      
+
       // Also emit to specific users if they're not in the room
-      const Chat = require('./models/Chat');
-      const chat = await Chat.findById(chatId);
-      
+      const store = require('./store');
+      const chat = store.chats.find(c => c._id === chatId);
+
       if (chat) {
         chat.participants.forEach(participantId => {
-          const socketId = connectedUsers.get(participantId.toString());
+          const socketId = connectedUsers.get(participantId);
           if (socketId && socketId !== socket.id) {
             io.to(socketId).emit('new_message_notification', {
               chatId,
@@ -120,31 +119,19 @@ io.on('connection', (socket) => {
   });
 });
 
-// Database connection
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => {
-  console.log('✅ MongoDB connected successfully');
-  
-  // Start server
-  const PORT = process.env.PORT || 5000;
-  server.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
-  });
-})
-.catch((error) => {
-  console.error('❌ MongoDB connection error:', error);
-  process.exit(1);
+// Start server
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`💾 Using In-Memory Database Mode`);
 });
 
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Error:', err.stack);
-  res.status(500).json({ 
-    success: false, 
+  res.status(500).json({
+    success: false,
     message: 'Something went wrong!',
     error: process.env.NODE_ENV === 'development' ? err.message : undefined
   });

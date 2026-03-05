@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const Review = require('../models/Review');
-const Order = require('../models/Order');
-const User = require('../models/User');
+const store = require('../store');
+const { v4: uuidv4 } = require('uuid');
 const { auth } = require('../middleware/auth');
 
 // @route   POST /api/reviews
@@ -12,65 +11,50 @@ router.post('/', auth, async (req, res) => {
   try {
     const { orderId, rating, comment, aspects } = req.body;
 
-    // Verify order exists and is delivered
-    const order = await Order.findById(orderId);
+    const order = store.orders.find(o => o._id === orderId);
     if (!order) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Order not found' 
-      });
+      return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
     if (order.status !== 'delivered') {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Can only review delivered orders' 
-      });
+      return res.status(400).json({ success: false, message: 'Can only review delivered orders' });
     }
 
-    // Check if user is part of this order
-    const isBuyer = order.buyer.toString() === req.userId.toString();
-    const isFarmer = order.farmer.toString() === req.userId.toString();
+    const isBuyer = order.buyer === req.userId;
+    const isFarmer = order.farmer === req.userId;
 
     if (!isBuyer && !isFarmer) {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Not authorized' 
-      });
+      return res.status(403).json({ success: false, message: 'Not authorized' });
     }
 
-    // Check if already reviewed
-    const existingReview = await Review.findOne({ 
-      order: orderId, 
-      reviewer: req.userId 
-    });
+    const existingReview = store.reviews.find(r => r.order === orderId && r.reviewer === req.userId);
 
     if (existingReview) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'You have already reviewed this order' 
-      });
+      return res.status(400).json({ success: false, message: 'You have already reviewed this order' });
     }
 
-    // Create review
-    const review = new Review({
+    const review = {
+      _id: uuidv4(),
       order: orderId,
       reviewer: req.userId,
       reviewee: isBuyer ? order.farmer : order.buyer,
       reviewerRole: req.user.role,
-      rating,
+      rating: Number(rating),
       comment,
-      aspects: aspects || {}
-    });
+      aspects: aspects || {},
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
 
-    await review.save();
+    store.reviews.push(review);
 
-    // Update reviewee's rating
-    const reviewee = await User.findById(review.reviewee);
-    const totalRating = (reviewee.rating * reviewee.totalRatings) + rating;
-    reviewee.totalRatings += 1;
-    reviewee.rating = totalRating / reviewee.totalRatings;
-    await reviewee.save();
+    const revieweeIndex = store.users.findIndex(u => u._id === review.reviewee);
+    if (revieweeIndex !== -1) {
+      const reviewee = store.users[revieweeIndex];
+      const totalRating = (reviewee.rating * reviewee.totalRatings) + Number(rating);
+      reviewee.totalRatings += 1;
+      reviewee.rating = totalRating / reviewee.totalRatings;
+    }
 
     res.status(201).json({
       success: true,
@@ -79,10 +63,7 @@ router.post('/', auth, async (req, res) => {
     });
   } catch (error) {
     console.error('Create review error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error' 
-    });
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 
@@ -91,22 +72,23 @@ router.post('/', auth, async (req, res) => {
 // @access  Public
 router.get('/user/:userId', async (req, res) => {
   try {
-    const reviews = await Review.find({ reviewee: req.params.userId })
-      .populate('reviewer', 'profile.name profile.avatar')
-      .populate('order', 'product')
-      .sort('-createdAt')
-      .limit(20);
+    const reviews = store.reviews
+      .filter(r => r.reviewee === req.params.userId)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 20)
+      .map(r => {
+        const populated = { ...r };
+        const reviewer = store.users.find(u => u._id === r.reviewer);
+        if (reviewer) populated.reviewer = { _id: reviewer._id, profile: reviewer.profile };
+        const order = store.orders.find(o => o._id === r.order);
+        if (order) populated.order = { _id: order._id, product: order.product };
+        return populated;
+      });
 
-    res.json({
-      success: true,
-      data: { reviews }
-    });
+    res.json({ success: true, data: { reviews } });
   } catch (error) {
     console.error('Get reviews error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error' 
-    });
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 
@@ -115,21 +97,12 @@ router.get('/user/:userId', async (req, res) => {
 // @access  Private
 router.get('/check/:orderId', auth, async (req, res) => {
   try {
-    const review = await Review.findOne({ 
-      order: req.params.orderId, 
-      reviewer: req.userId 
-    });
+    const review = store.reviews.find(r => r.order === req.params.orderId && r.reviewer === req.userId);
 
-    res.json({
-      success: true,
-      data: { hasReviewed: !!review }
-    });
+    res.json({ success: true, data: { hasReviewed: !!review } });
   } catch (error) {
     console.error('Check review error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error' 
-    });
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 

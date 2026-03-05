@@ -1,8 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const { v4: uuidv4 } = require('uuid');
 const { body, validationResult } = require('express-validator');
-const User = require('../models/User');
+const store = require('../store');
 const { auth } = require('../middleware/auth');
 
 // Generate JWT Token
@@ -20,42 +22,45 @@ router.post('/register', [
   body('role').isIn(['farmer', 'buyer']).withMessage('Role must be farmer or buyer')
 ], async (req, res) => {
   try {
-    // Validate input
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
-        success: false, 
-        errors: errors.array() 
-      });
+      return res.status(400).json({ success: false, errors: errors.array() });
     }
 
     const { email, password, name, role, phone, location } = req.body;
 
     // Check if user exists
-    let user = await User.findOne({ email });
-    if (user) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'User already exists with this email' 
-      });
+    const existingUser = store.users.find(u => u.email === email);
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: 'User already exists with this email' });
     }
 
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
     // Create new user
-    user = new User({
+    const newUser = {
+      _id: uuidv4(),
       email,
-      password,
+      password: hashedPassword,
       role,
       profile: {
         name,
         phone: phone || '',
-        location: location || {}
-      }
-    });
+        location: location || {},
+        avatar: 'https://via.placeholder.com/150',
+        bio: ''
+      },
+      rating: 0,
+      totalRatings: 0,
+      isVerified: false,
+      createdAt: new Date()
+    };
 
-    await user.save();
+    store.users.push(newUser);
 
-    // Generate token
-    const token = generateToken(user._id);
+    const token = generateToken(newUser._id);
 
     res.status(201).json({
       success: true,
@@ -63,19 +68,16 @@ router.post('/register', [
       data: {
         token,
         user: {
-          id: user._id,
-          email: user.email,
-          role: user.role,
-          profile: user.profile
+          id: newUser._id,
+          email: newUser.email,
+          role: newUser.role,
+          profile: newUser.profile
         }
       }
     });
   } catch (error) {
     console.error('Register error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error during registration' 
-    });
+    res.status(500).json({ success: false, message: 'Server error during registration' });
   }
 });
 
@@ -87,36 +89,23 @@ router.post('/login', [
   body('password').notEmpty().withMessage('Password is required')
 ], async (req, res) => {
   try {
-    // Validate input
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
-        success: false, 
-        errors: errors.array() 
-      });
+      return res.status(400).json({ success: false, errors: errors.array() });
     }
 
     const { email, password } = req.body;
 
-    // Find user
-    const user = await User.findOne({ email });
+    const user = store.users.find(u => u.email === email);
     if (!user) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Invalid email or password' 
-      });
+      return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
 
-    // Check password
-    const isMatch = await user.comparePassword(password);
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Invalid email or password' 
-      });
+      return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
 
-    // Generate token
     const token = generateToken(user._id);
 
     res.json({
@@ -136,10 +125,7 @@ router.post('/login', [
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error during login' 
-    });
+    res.status(500).json({ success: false, message: 'Server error during login' });
   }
 });
 
@@ -148,18 +134,21 @@ router.post('/login', [
 // @access  Private
 router.get('/me', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.userId).select('-password');
-    
+    const user = store.users.find(u => u._id === req.userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Omit password
+    const { password, ...userWithoutPassword } = user;
+
     res.json({
       success: true,
-      data: { user }
+      data: { user: userWithoutPassword }
     });
   } catch (error) {
     console.error('Get user error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error' 
-    });
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 
@@ -170,27 +159,29 @@ router.put('/profile', auth, async (req, res) => {
   try {
     const { name, phone, location, bio, avatar } = req.body;
 
-    const user = await User.findById(req.userId);
-    
+    const userIndex = store.users.findIndex(u => u._id === req.userId);
+    if (userIndex === -1) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const user = store.users[userIndex];
+
     if (name) user.profile.name = name;
     if (phone) user.profile.phone = phone;
     if (location) user.profile.location = { ...user.profile.location, ...location };
     if (bio) user.profile.bio = bio;
     if (avatar) user.profile.avatar = avatar;
 
-    await user.save();
+    const { password, ...userWithoutPassword } = user;
 
     res.json({
       success: true,
       message: 'Profile updated successfully',
-      data: { user }
+      data: { user: userWithoutPassword }
     });
   } catch (error) {
     console.error('Update profile error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error' 
-    });
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 

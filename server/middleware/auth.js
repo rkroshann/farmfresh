@@ -1,60 +1,42 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const store = require('../store');
 
 const auth = async (req, res, next) => {
   try {
-    // Get token from header
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
     if (!token) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'No authentication token, access denied' 
-      });
+      return res.status(401).json({ success: false, message: 'No authentication token, access denied' });
     }
 
-    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Find user
-    const user = await User.findById(decoded.userId).select('-password');
+    const user = store.users.find(u => u._id === decoded.userId);
 
     if (!user) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'User not found' 
-      });
+      return res.status(401).json({ success: false, message: 'User not found' });
     }
 
-    // Attach user to request
-    req.user = user;
+    const { password, ...userWithoutPassword } = user;
+
+    req.user = userWithoutPassword;
     req.userId = user._id;
-    
+
     next();
   } catch (error) {
     console.error('Auth middleware error:', error);
-    res.status(401).json({ 
-      success: false, 
-      message: 'Token is invalid or expired' 
-    });
+    res.status(401).json({ success: false, message: 'Token is invalid or expired' });
   }
 };
 
-// Role-based middleware
 const requireRole = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Authentication required' 
-      });
+      return res.status(401).json({ success: false, message: 'Authentication required' });
     }
 
     if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ 
-        success: false, 
-        message: `Access denied. Required role: ${roles.join(' or ')}` 
-      });
+      return res.status(403).json({ success: false, message: `Access denied. Required role: ${roles.join(' or ')}` });
     }
 
     next();
