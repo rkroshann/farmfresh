@@ -15,7 +15,7 @@ const HeroSection = () => {
                 playsInline
                 className="absolute inset-0 w-full h-full object-cover z-0"
             >
-                <source src="/videos/hero-bg.mp4" type="video/mp4" />
+                <source src="/videos/Farmfresh_animation_farm_to_market_7499fbd687.mp4" type="video/mp4" />
                 Your browser does not support the video tag.
             </video>
 
