@@ -11,7 +11,7 @@ import {
 import {
   Search, FilterList, ShoppingCart, Chat, Person, Logout,
   Menu as MenuIcon, Dashboard, Receipt, Star, LocationOn,
-  AddShoppingCart
+  AddShoppingCart, Home as HomeIcon, ChevronRight, ArrowBack
 } from '@mui/icons-material';
 import { productAPI } from '../services/api';
 import useStore from '../store/useStore';
@@ -98,9 +98,45 @@ function Marketplace() {
             <MenuIcon />
           </IconButton>
 
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 800, color: '#2e7d32', letterSpacing: -0.5 }}>
+          <Typography
+            variant="h6"
+            component="div"
+            onClick={() => navigate('/')}
+            sx={{ flexGrow: 1, fontWeight: 800, color: '#2e7d32', letterSpacing: -0.5, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 1 }}
+          >
             🌾 FarmFresh
           </Typography>
+
+          <Box sx={{ display: { xs: 'none', md: 'flex' }, mr: 3, gap: 3 }}>
+            <Button
+              color="inherit"
+              onClick={() => navigate('/')}
+              sx={{ fontWeight: 'bold', '&:hover': { color: '#2e7d32' } }}
+            >
+              Home
+            </Button>
+            <Button
+              color="inherit"
+              onClick={() => navigate('/marketplace')}
+              sx={{ fontWeight: 'bold', color: '#2e7d32' }}
+            >
+              Marketplace
+            </Button>
+            <Button
+              color="inherit"
+              onClick={() => navigate('/orders')}
+              sx={{ fontWeight: 'bold', '&:hover': { color: '#2e7d32' } }}
+            >
+              Orders
+            </Button>
+            <Button
+              color="inherit"
+              onClick={() => navigate('/chats')}
+              sx={{ fontWeight: 'bold', '&:hover': { color: '#2e7d32' } }}
+            >
+              Chat
+            </Button>
+          </Box>
 
           {/* Cart Icon — opens drawer */}
           <IconButton color="inherit" onClick={() => setIsCartOpen(true)}>
@@ -154,6 +190,10 @@ function Marketplace() {
           </Typography>
           <Divider sx={{ mb: 2 }} />
           <List>
+            <ListItem button onClick={() => { navigate('/'); setDrawerOpen(false); }}>
+              <ListItemIcon><HomeIcon color="primary" /></ListItemIcon>
+              <ListItemText primary="Home" primaryTypographyProps={{ fontWeight: 600 }} />
+            </ListItem>
             <ListItem button onClick={() => { navigate('/marketplace'); setDrawerOpen(false); }}>
               <ListItemIcon><ShoppingCart color="primary" /></ListItemIcon>
               <ListItemText primary="Marketplace" primaryTypographyProps={{ fontWeight: 600 }} />
@@ -255,7 +295,24 @@ function Marketplace() {
       </Drawer>
 
       {/* Main Content */}
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 8 }}>
+      <Container maxWidth="lg" sx={{ mt: 2, mb: 8 }}>
+        {/* Navigation Breadcrumbs & Back Button */}
+        <Box className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+          <Box className="flex items-center text-sm font-bold text-gray-500 bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-100">
+            <span className="cursor-pointer hover:text-green-600 transition-colors" onClick={() => navigate('/')}>Home</span>
+            <ChevronRight size={16} className="mx-2 text-gray-300" />
+            <span className="text-green-600">Marketplace</span>
+          </Box>
+          <Button
+            variant="text"
+            startIcon={<ArrowBack />}
+            onClick={() => navigate('/')}
+            className="!text-gray-600 !font-black !capitalize hover:!text-green-600 !transition-all"
+          >
+            Back to Home
+          </Button>
+        </Box>
+
         {/* Banner Section */}
         {!filters.search && !filters.category && (
           <Box
