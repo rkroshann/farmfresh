@@ -16,8 +16,7 @@ import {
 import { productAPI } from '../services/api';
 import useStore from '../store/useStore';
 import toast from 'react-hot-toast';
-import staticProducts from '../data/products';
-import { addToCart, getCartCount } from '../utils/cartManager';
+import CartDrawer from '../components/CartDrawer';
 
 function Marketplace() {
   const navigate = useNavigate();
@@ -29,6 +28,7 @@ function Marketplace() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [cartCount, setCartCount] = useState(getCartCount());
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -52,7 +52,7 @@ function Marketplace() {
       if (filters.category) filtered = filtered.filter(p => p.category === filters.category);
       if (filters.minPrice) filtered = filtered.filter(p => p.price >= Number(filters.minPrice));
       if (filters.maxPrice) filtered = filtered.filter(p => p.price <= Number(filters.maxPrice));
-      if (filters.search) filtered = filtered.filter(p => p.name.toLowerCase().includes(filters.search.toLowerCase()));
+      if (filters.search) filtered = filtered.filter(p => (p.name || p.title).toLowerCase().includes(filters.search.toLowerCase()));
       if (filters.organic) filtered = filtered.filter(p => p.organic);
       setProducts(filtered);
     } finally {
@@ -65,6 +65,7 @@ function Marketplace() {
     addToCart(product);
     setCartCount(getCartCount());
     toast.success(`${product.name || product.title} added to cart! 🛒`);
+    setIsCartOpen(true); // Open drawer on add
   };
 
   const handleFilterChange = (field, value) => {
@@ -82,9 +83,9 @@ function Marketplace() {
   };
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
+    <Box sx={{ flexGrow: 1, bgcolor: '#f8f9fa' }}>
       {/* App Bar */}
-      <AppBar position="sticky" color="primary">
+      <AppBar position="sticky" sx={{ background: '#fff', color: '#333', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
         <Toolbar>
           <IconButton
             edge="start"
@@ -95,13 +96,13 @@ function Marketplace() {
             <MenuIcon />
           </IconButton>
 
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 800, color: '#2e7d32', letterSpacing: -0.5 }}>
             🌾 FarmFresh
           </Typography>
 
-          {/* Cart Icon — always visible */}
-          <IconButton color="inherit" onClick={() => navigate('/cart')}>
-            <Badge badgeContent={cartCount} color="secondary">
+          {/* Cart Icon — opens drawer */}
+          <IconButton color="inherit" onClick={() => setIsCartOpen(true)}>
+            <Badge badgeContent={cartCount} color="error" sx={{ '& .MuiBadge-badge': { fontWeight: 'bold' } }}>
               <ShoppingCart />
             </Badge>
           </IconButton>
@@ -118,7 +119,7 @@ function Marketplace() {
                 color="inherit"
                 onClick={(e) => setAnchorEl(e.currentTarget)}
               >
-                <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main' }}>
+                <Avatar sx={{ width: 32, height: 32, bgcolor: '#2e7d32' }}>
                   {user?.profile?.name?.[0]?.toUpperCase()}
                 </Avatar>
               </IconButton>
@@ -136,7 +137,7 @@ function Marketplace() {
               </Menu>
             </>
           ) : (
-            <Button color="inherit" onClick={() => navigate('/login')}>
+            <Button variant="outlined" color="primary" onClick={() => navigate('/login')} sx={{ ml: 2, borderRadius: 2 }}>
               Login
             </Button>
           )}
@@ -145,39 +146,41 @@ function Marketplace() {
 
       {/* Navigation Drawer */}
       <Drawer anchor="left" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
-        <Box sx={{ width: 250, p: 2 }}>
-          <Typography variant="h6" gutterBottom>
+        <Box sx={{ width: 280, p: 3 }}>
+          <Typography variant="h5" fontWeight="bold" gutterBottom color="primary">
             Menu
           </Typography>
+          <Divider sx={{ mb: 2 }} />
           <List>
             <ListItem button onClick={() => { navigate('/marketplace'); setDrawerOpen(false); }}>
-              <ListItemIcon><ShoppingCart /></ListItemIcon>
-              <ListItemText primary="Marketplace" />
+              <ListItemIcon><ShoppingCart color="primary" /></ListItemIcon>
+              <ListItemText primary="Marketplace" primaryTypographyProps={{ fontWeight: 600 }} />
             </ListItem>
-            <ListItem button onClick={() => { navigate('/cart'); setDrawerOpen(false); }}>
+            <ListItem button onClick={() => { setIsCartOpen(true); setDrawerOpen(false); }}>
               <ListItemIcon>
-                <Badge badgeContent={cartCount} color="secondary">
-                  <ShoppingCart />
+                <Badge badgeContent={cartCount} color="error">
+                  <ShoppingCart color="primary" />
                 </Badge>
               </ListItemIcon>
-              <ListItemText primary="My Cart" />
+              <ListItemText primary="My Cart" primaryTypographyProps={{ fontWeight: 600 }} />
             </ListItem>
 
             {isAuthenticated && (
               <>
+                <Divider sx={{ my: 2 }} />
                 {user?.role === 'farmer' && (
                   <ListItem button onClick={() => { navigate('/farmer/dashboard'); setDrawerOpen(false); }}>
-                    <ListItemIcon><Dashboard /></ListItemIcon>
-                    <ListItemText primary="My Dashboard" />
+                    <ListItemIcon><Dashboard color="primary" /></ListItemIcon>
+                    <ListItemText primary="Farmer Dashboard" primaryTypographyProps={{ fontWeight: 600 }} />
                   </ListItem>
                 )}
                 <ListItem button onClick={() => { navigate('/chats'); setDrawerOpen(false); }}>
-                  <ListItemIcon><Chat /></ListItemIcon>
-                  <ListItemText primary="Messages" />
+                  <ListItemIcon><Chat color="primary" /></ListItemIcon>
+                  <ListItemText primary="Messages" primaryTypographyProps={{ fontWeight: 600 }} />
                 </ListItem>
                 <ListItem button onClick={() => { navigate('/orders'); setDrawerOpen(false); }}>
-                  <ListItemIcon><Receipt /></ListItemIcon>
-                  <ListItemText primary="Orders" />
+                  <ListItemIcon><Receipt color="primary" /></ListItemIcon>
+                  <ListItemText primary="My Orders" primaryTypographyProps={{ fontWeight: 600 }} />
                 </ListItem>
               </>
             )}
@@ -191,200 +194,274 @@ function Marketplace() {
         open={filterDrawerOpen}
         onClose={() => setFilterDrawerOpen(false)}
       >
-        <Box sx={{ width: 300, p: 3 }}>
-          <Typography variant="h6" gutterBottom>
-            Filters
+        <Box sx={{ width: 320, p: 4 }}>
+          <Typography variant="h6" fontWeight="bold" gutterBottom>
+            Refine Results
           </Typography>
+          <Divider sx={{ mb: 3 }} />
 
           <FormControl fullWidth margin="normal">
             <InputLabel>Category</InputLabel>
             <Select
               value={filters.category}
               onChange={(e) => handleFilterChange('category', e.target.value)}
+              sx={{ borderRadius: 2 }}
             >
-              <MenuItem value="">All Categories</MenuItem>
-              <MenuItem value="vegetables">Vegetables</MenuItem>
-              <MenuItem value="fruits">Fruits</MenuItem>
-              <MenuItem value="grains">Grains</MenuItem>
-              <MenuItem value="dairy">Dairy</MenuItem>
-              <MenuItem value="herbs">Herbs</MenuItem>
+              <MenuItem value="">All Produce</MenuItem>
+              <MenuItem value="vegetables">🥕 Vegetables</MenuItem>
+              <MenuItem value="fruits">🍎 Fruits</MenuItem>
+              <MenuItem value="grains">🌾 Grains</MenuItem>
+              <MenuItem value="dairy">🥛 Dairy</MenuItem>
+              <MenuItem value="herbs">🌿 Herbs</MenuItem>
             </Select>
           </FormControl>
 
-          <TextField
-            fullWidth
-            label="Min Price (₹)"
-            type="number"
-            value={filters.minPrice}
-            onChange={(e) => handleFilterChange('minPrice', e.target.value)}
-            margin="normal"
-          />
-
-          <TextField
-            fullWidth
-            label="Max Price (₹)"
-            type="number"
-            value={filters.maxPrice}
-            onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
-            margin="normal"
-          />
+          <Box sx={{ mt: 3 }}>
+            <Typography variant="subtitle2" gutterBottom>Price Range</Typography>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                fullWidth
+                label="Min ₹"
+                type="number"
+                value={filters.minPrice}
+                onChange={(e) => handleFilterChange('minPrice', e.target.value)}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+              />
+              <TextField
+                fullWidth
+                label="Max ₹"
+                type="number"
+                value={filters.maxPrice}
+                onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+              />
+            </Box>
+          </Box>
 
           <FormControlLabel
             control={
               <Switch
                 checked={filters.organic}
                 onChange={(e) => handleFilterChange('organic', e.target.checked)}
+                color="success"
               />
             }
-            label="Organic Only"
-            sx={{ mt: 2 }}
+            label="Organic Certified Only"
+            sx={{ mt: 4, bgcolor: '#f1f8e9', p: 1, borderRadius: 2, mr: 0, width: '100%' }}
           />
         </Box>
       </Drawer>
 
       {/* Main Content */}
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 8 }}>
+        {/* Banner Section */}
+        {!filters.search && !filters.category && (
+          <Box
+            sx={{
+              mb: 6,
+              p: 6,
+              borderRadius: 6,
+              background: 'linear-gradient(135deg, #1b5e20, #4caf50)',
+              color: '#fff',
+              position: 'relative',
+              overflow: 'hidden',
+              boxShadow: '0 20px 40px rgba(46, 125, 50, 0.2)'
+            }}
+          >
+            <Box sx={{ position: 'relative', zIndex: 1 }}>
+              <Chip label="Fresh from the farm" sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: '#fff', fontWeight: 'bold', mb: 2 }} />
+              <Typography variant="h3" fontWeight="900" gutterBottom>Harvest of the Week</Typography>
+              <Typography variant="h6" sx={{ opacity: 0.9, mb: 4, maxWidth: 500 }}>
+                Get 100% organic produce delivered straight from our fields to your kitchen.
+              </Typography>
+              <Button
+                variant="contained"
+                size="large"
+                sx={{ bgcolor: '#fff', color: '#2e7d32', fontWeight: 'bold', borderRadius: 3, '&:hover': { bgcolor: '#f0f0f0' } }}
+              >
+                Shop Now
+              </Button>
+            </Box>
+            <Box component="span" sx={{ position: 'absolute', right: -40, bottom: -40, fontSize: 300, opacity: 0.1 }}>🥕</Box>
+          </Box>
+        )}
+
         {/* Search and Filter Bar */}
-        <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
+        <Box sx={{ mb: 5, display: 'flex', gap: 2 }}>
           <TextField
             fullWidth
-            placeholder="Search produce..."
+            placeholder="Search for vegetables, fruits or dairy..."
             value={filters.search}
             onChange={(e) => handleFilterChange('search', e.target.value)}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <Search />
+                  <Search color="primary" />
                 </InputAdornment>
-              )
+              ),
+              sx: { borderRadius: 4, bgcolor: '#fff', boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }
             }}
           />
           <Button
-            variant="outlined"
+            variant="contained"
+            disableElevation
             startIcon={<FilterList />}
             onClick={() => setFilterDrawerOpen(true)}
+            sx={{ borderRadius: 4, px: 4, fontWeight: 'bold' }}
           >
             Filters
           </Button>
         </Box>
 
+        {/* Seasonal / Featured Section */}
+        {!loading && products.length > 0 && !filters.search && (
+          <Box sx={{ mb: 6 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Typography variant="h5" fontWeight="bold">Fresh Today ☀️</Typography>
+              <Typography color="primary" fontWeight="bold" sx={{ cursor: 'pointer' }}>View All</Typography>
+            </Box>
+            <Grid container spacing={3}>
+              {products.slice(0, 3).map((product) => (
+                <Grid item xs={12} sm={4} key={`featured-${product._id || product.id}`}>
+                  <Card sx={{
+                    borderRadius: 4,
+                    overflow: 'hidden',
+                    position: 'relative',
+                    boxShadow: '0 5px 15px rgba(0,0,0,0.05)',
+                    transition: 'transform 0.3s',
+                    '&:hover': { transform: 'scale(1.02)' }
+                  }}>
+                    <CardMedia
+                      component="img"
+                      height="180"
+                      image={(product.images && product.images[0]) || product.image || 'https://via.placeholder.com/300x200?text=Fresh+Produce'}
+                    />
+                    <Box sx={{ position: 'absolute', top: 12, left: 12 }}>
+                      <Chip label="Seasonal" size="small" sx={{ bgcolor: '#ff9800', color: '#fff', fontWeight: 'bold' }} />
+                    </Box>
+                    <CardContent sx={{ p: 2 }}>
+                      <Typography fontWeight="bold">{product.name || product.title}</Typography>
+                      <Typography color="primary" fontWeight="bold">₹{product.price || product.basePrice}/{product.unit}</Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
+        )}
+
+        <Divider sx={{ mb: 6 }} />
+
         {/* Products Grid */}
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h5" fontWeight="bold" gutterBottom>
+            {filters.category ? `${filters.category.charAt(0).toUpperCase() + filters.category.slice(1)}` : 'All Products'}
+          </Typography>
+        </Box>
+
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
             <CircularProgress />
           </Box>
         ) : products.length === 0 ? (
-          <Alert severity="info">
-            No products found. Try adjusting your filters.
+          <Alert severity="info" sx={{ borderRadius: 3 }}>
+            No products found matching your search. Try broadening your criteria!
           </Alert>
         ) : (
           <Grid container spacing={3}>
-            {products.map((product) => (
-              <Grid item xs={12} sm={6} md={4} key={product._id || product.id}>
+            {products.map((product, index) => (
+              <Grid item xs={12} sm={6} md={3} key={product._id || product.id}>
                 <Card
                   sx={{
                     height: '100%',
                     display: 'flex',
                     flexDirection: 'column',
                     cursor: 'pointer',
-                    transition: 'transform 0.2s, box-shadow 0.2s',
+                    borderRadius: 4,
+                    border: '1px solid #eee',
+                    boxShadow: 'none',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: '0 12px 28px rgba(0,0,0,0.12)'
+                      transform: 'translateY(-8px)',
+                      boxShadow: '0 20px 30px rgba(0,0,0,0.08)',
+                      borderColor: 'transparent'
                     }
                   }}
-                  onClick={() => product._id ? handleProductClick(product._id) : null}
+                  onClick={() => (product._id || product.id) ? handleProductClick(product._id || product.id) : null}
                 >
-                  <CardMedia
-                    component="img"
-                    height="200"
-                    image={product.image || (product.images && product.images[0]) || 'https://via.placeholder.com/300x200?text=No+Image'}
-                    alt={product.name || product.title}
-                    sx={{ objectFit: 'cover' }}
-                  />
-                  <CardContent sx={{ flexGrow: 1 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                      <Typography variant="h6" component="div" noWrap>
-                        {product.name || product.title}
-                      </Typography>
+                  <Box sx={{ position: 'relative' }}>
+                    <CardMedia
+                      component="img"
+                      height="220"
+                      image={product.image || (product.images && product.images[0]) || 'https://via.placeholder.com/300x200?text=No+Image'}
+                      alt={product.name || product.title}
+                      sx={{ objectFit: 'cover' }}
+                    />
+                    <Box sx={{ position: 'absolute', top: 12, left: 12, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                       {product.organic && (
-                        <Chip label="Organic" size="small" color="success" />
+                        <Chip label="Organic" size="small" sx={{ bgcolor: '#4caf50', color: '#fff', fontWeight: 'bold', fontSize: 10 }} />
+                      )}
+                      {index % 3 === 0 && (
+                        <Chip label="Fresh Today" size="small" sx={{ bgcolor: '#e91e63', color: '#fff', fontWeight: 'bold', fontSize: 10 }} />
                       )}
                     </Box>
-
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                      {(product.description || '').substring(0, 80)}{product.description && product.description.length > 80 ? '...' : ''}
+                  </Box>
+                  <CardContent sx={{ flexGrow: 1, p: 2 }}>
+                    <Typography variant="subtitle1" fontWeight="800" noWrap sx={{ mb: 0.5 }}>
+                      {product.name || product.title}
                     </Typography>
 
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                      <LocationOn fontSize="small" color="action" sx={{ mr: 0.5 }} />
-                      <Typography variant="caption" color="text.secondary">
-                        {(typeof product.location === 'string' ? product.location : product.location?.city) || product.farmer?.profile?.location?.city || 'Location not set'}
-                      </Typography>
-                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{
+                      mb: 2,
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      height: 40,
+                      fontSize: '0.85rem'
+                    }}>
+                      {product.description || 'Freshly harvested produce directly from our farm partners.'}
+                    </Typography>
 
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                      <Avatar
-                        src={product.farmer?.profile?.avatar}
-                        sx={{ width: 24, height: 24, mr: 1, bgcolor: '#4caf50', fontSize: 14 }}
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Box>
+                        <Typography variant="h6" color="primary" sx={{ fontWeight: 900, lineHeight: 1 }}>
+                          ₹{product.price || product.basePrice}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          per {product.unit}
+                        </Typography>
+                      </Box>
+                      <IconButton
+                        onClick={(e) => handleAddToCart(e, product)}
+                        sx={{
+                          bgcolor: '#e8f5e9',
+                          color: '#2e7d32',
+                          '&:hover': { bgcolor: '#2e7d32', color: '#fff' }
+                        }}
                       >
-                        {(typeof product.farmer === 'string' ? product.farmer : product.farmer?.profile?.name)?.[0]?.toUpperCase()}
-                      </Avatar>
-                      <Typography variant="caption">
-                        {typeof product.farmer === 'string' ? product.farmer : product.farmer?.profile?.name}
-                      </Typography>
-                      {product.farmer?.rating > 0 && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', ml: 1 }}>
-                          <Star fontSize="small" sx={{ color: 'gold', fontSize: 16 }} />
-                          <Typography variant="caption" sx={{ ml: 0.25 }}>
-                            {product.farmer.rating.toFixed(1)}
-                          </Typography>
-                        </Box>
-                      )}
-                    </Box>
-
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
-                      <Typography variant="h6" color="primary" fontWeight="bold">
-                        ₹{product.price || product.basePrice}/{product.unit}
-                      </Typography>
-                      {product.availableQuantity && (
-                        <Chip
-                          label={`${product.availableQuantity} ${product.unit}`}
-                          size="small"
-                          variant="outlined"
-                        />
-                      )}
+                        <AddShoppingCart />
+                      </IconButton>
                     </Box>
                   </CardContent>
-
-                  {/* Add to Cart Button */}
-                  <CardActions sx={{ px: 2, pb: 2, pt: 0 }}>
-                    <Button
-                      variant="contained"
-                      fullWidth
-                      startIcon={<AddShoppingCart />}
-                      onClick={(e) => handleAddToCart(e, product)}
-                      sx={{
-                        borderRadius: 2,
-                        py: 1,
-                        fontWeight: 600,
-                        background: 'linear-gradient(135deg, #4caf50, #388e3c)',
-                        boxShadow: '0 2px 8px rgba(76, 175, 80, 0.3)',
-                        '&:hover': {
-                          background: 'linear-gradient(135deg, #388e3c, #2e7d32)',
-                          boxShadow: '0 4px 12px rgba(76, 175, 80, 0.4)',
-                        }
-                      }}
-                    >
-                      Add to Cart
-                    </Button>
-                  </CardActions>
                 </Card>
               </Grid>
             ))}
           </Grid>
         )}
       </Container>
+
+      {/* Cart Drawer Extension */}
+      <CartDrawer
+        open={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+      />
+
+      {/* Footer Branding */}
+      <Box sx={{ py: 6, textAlign: 'center', bgcolor: '#fff', borderTop: '1px solid #eee' }}>
+        <Typography variant="h6" fontWeight="bold" color="primary" gutterBottom>🌾 FarmFresh Marketplace</Typography>
+        <Typography variant="body2" color="text.secondary">Direct from farm to your kitchen table.</Typography>
+      </Box>
     </Box>
   );
 }

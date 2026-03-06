@@ -33,16 +33,24 @@ function saveCart(cart) {
  */
 export function addToCart(product) {
     const cart = getCart();
-    const existingIndex = cart.findIndex(item => item.id === product.id);
+
+    // Support both id (static) and _id (API)
+    const pid = product._id || product.id;
+    const existingIndex = cart.findIndex(item => item.id === pid);
+
+    // Normalize field names
+    const pName = product.name || product.title;
+    const pPrice = product.price || product.basePrice;
+    const pImage = (product.images && product.images[0]) || product.image;
 
     if (existingIndex > -1) {
         cart[existingIndex].quantity += 1;
     } else {
         cart.push({
-            id: product.id,
-            name: product.name,
-            price: product.price,
-            image: product.image,
+            id: pid,
+            name: pName,
+            price: pPrice,
+            image: pImage,
             unit: product.unit || 'unit',
             quantity: 1
         });

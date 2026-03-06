@@ -252,32 +252,43 @@ function CartPage() {
                                 Order Summary
                             </Typography>
 
-                            {cart.map((item) => (
-                                <Box
-                                    key={item.id}
-                                    sx={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        mb: 1
-                                    }}
-                                >
-                                    <Typography variant="body2" color="text.secondary">
-                                        {item.name} × {item.quantity}
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                        ₹{item.price * item.quantity}
-                                    </Typography>
-                                </Box>
-                            ))}
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    mb: 1
+                                }}
+                            >
+                                <Typography variant="body2" color="text.secondary">
+                                    Subtotal
+                                </Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                    ₹{totalPrice}
+                                </Typography>
+                            </Box>
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    mb: 2
+                                }}
+                            >
+                                <Typography variant="body2" color="text.secondary">
+                                    Delivery Fee
+                                </Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                    ₹30
+                                </Typography>
+                            </Box>
 
                             <Divider sx={{ my: 2 }} />
 
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                                    Total
+                                    Total Amount
                                 </Typography>
                                 <Typography variant="h5" sx={{ fontWeight: 700, color: '#4caf50' }}>
-                                    ₹{totalPrice}
+                                    ₹{totalPrice + 30}
                                 </Typography>
                             </Box>
 
@@ -299,9 +310,9 @@ function CartPage() {
                                         boxShadow: '0 6px 20px rgba(76, 175, 80, 0.5)',
                                     }
                                 }}
-                                onClick={() => toast.success('Order placed successfully! 🎉')}
+                                onClick={() => toast.success('Order placed successfully! OUR farm team will contact you soon. 🌾')}
                             >
-                                Place Order — ₹{totalPrice}
+                                Place Order — ₹{totalPrice + 30}
                             </Button>
                         </Paper>
                     </>
