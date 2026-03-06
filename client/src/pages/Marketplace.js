@@ -6,7 +6,7 @@ import {
   InputLabel, Box, Chip, InputAdornment, IconButton, AppBar,
   Toolbar, Avatar, Menu, MenuItem as MenuItemMui, Drawer, List,
   ListItem, ListItemIcon, ListItemText, Switch, FormControlLabel,
-  CircularProgress, Alert, Badge
+  CircularProgress, Alert, Badge, Divider
 } from '@mui/material';
 import {
   Search, FilterList, ShoppingCart, Chat, Person, Logout,
@@ -16,6 +16,8 @@ import {
 import { productAPI } from '../services/api';
 import useStore from '../store/useStore';
 import toast from 'react-hot-toast';
+import staticProducts from '../data/products';
+import { addToCart, getCartCount } from '../utils/cartManager';
 import CartDrawer from '../components/CartDrawer';
 
 function Marketplace() {

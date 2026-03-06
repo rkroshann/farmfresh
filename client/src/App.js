@@ -19,6 +19,7 @@ import OrderList from './pages/OrderList';
 import OrderDetail from './pages/OrderDetail';
 import Profile from './pages/Profile';
 import CartPage from './pages/CartPage';
+import LandingPage from './pages/LandingPage';
 
 // Theme
 const theme = createTheme({
@@ -102,7 +103,7 @@ function App() {
         <SocketProvider>
           <Routes>
             {/* Public Routes */}
-            <Route path="/" element={<Navigate to="/marketplace" replace />} />
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
 
