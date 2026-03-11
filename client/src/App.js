@@ -13,8 +13,7 @@ import Marketplace from './pages/Marketplace';
 import ProductDetail from './pages/ProductDetail';
 import FarmerDashboard from './pages/FarmerDashboard';
 import CreateListing from './pages/CreateListing';
-import ChatList from './pages/ChatList';
-import ChatRoom from './pages/ChatRoom';
+import ChatLayout from './pages/ChatLayout';
 import OrderList from './pages/OrderList';
 import OrderDetail from './pages/OrderDetail';
 import Profile from './pages/Profile';
@@ -117,7 +116,7 @@ function App() {
               path="/chats"
               element={
                 <ProtectedRoute>
-                  <ChatList />
+                  <ChatLayout />
                 </ProtectedRoute>
               }
             />
@@ -125,7 +124,7 @@ function App() {
               path="/chats/:id"
               element={
                 <ProtectedRoute>
-                  <ChatRoom />
+                  <ChatLayout />
                 </ProtectedRoute>
               }
             />

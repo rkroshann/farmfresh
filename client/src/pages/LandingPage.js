@@ -44,10 +44,10 @@ const LandingPage = () => {
     ];
 
     const sampleProducts = [
-        { id: 1, name: 'Organic Red Tomatoes', price: 40, farmerName: 'Harish Kumar', image: 'https://images.unsplash.com/photo-1518977676601-b53f02bad675?auto=format&fit=crop&q=80&w=500' },
-        { id: 2, name: 'Fresh Farm Milk', price: 60, farmerName: 'Suresh Dairy', image: 'https://images.unsplash.com/photo-1550583724-125581cc25fb?auto=format&fit=crop&q=80&w=500' },
-        { id: 3, name: 'Green Bell Peppers', price: 35, farmerName: 'Anita Singh', image: 'https://images.unsplash.com/photo-1566275529824-cca6d008f3da?auto=format&fit=crop&q=80&w=500' },
-        { id: 4, name: 'Golden Honey', price: 250, farmerName: 'The Bee Farm', image: 'https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&q=80&w=500' },
+        { id: 1, name: 'Organic Red Tomatoes', price: 40, farmerName: 'Harish Kumar', image: '/images/tomato.png' },
+        { id: 2, name: 'Fresh Farm Milk', price: 60, farmerName: 'Suresh Dairy', image: '/images/milk.png' },
+        { id: 3, name: 'Green Bell Peppers', price: 35, farmerName: 'Anita Singh', image: '/images/bell_pepper.png' },
+        { id: 4, name: 'Golden Honey', price: 250, farmerName: 'The Bee Farm', image: '/images/honey.png' },
     ];
 
     const sampleFarmers = [

@@ -24,18 +24,18 @@ const HeroSection = () => {
 
             {/* Content Overlay */}
             <div className="relative z-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
-                <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 text-white px-6 py-2.5 rounded-full text-sm font-black uppercase tracking-[0.2em] mb-10 animate-fade-in-down shadow-xl">
+                <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 text-white px-6 py-2 rounded-full text-sm font-black uppercase tracking-[0.2em] mb-5 animate-fade-in-down shadow-xl">
                     <span className="flex h-2 w-2 rounded-full bg-farm-gold animate-pulse"></span>
                     Direct from Local Farms
                 </div>
 
-                <h1 className="text-5xl md:text-7xl lg:text-8xl font-sans font-black leading-[1.1] mb-8 drop-shadow-2xl">
+                <h1 className="text-4xl md:text-6xl lg:text-7xl font-sans font-black leading-[1.1] mb-5 drop-shadow-2xl">
                     Fresh Farm Produce <br />
                     <span className="text-farm-gold">Delivered Directly</span> <br />
                     To Your Door.
                 </h1>
 
-                <p className="text-xl md:text-2xl text-gray-100 mb-14 leading-relaxed max-w-3xl mx-auto font-medium drop-shadow-lg opacity-95">
+                <p className="text-lg md:text-xl text-gray-100 mb-8 leading-relaxed max-w-3xl mx-auto font-medium drop-shadow-lg opacity-95">
                     We connect local farmers directly with you. Enjoy fresh organic harvests without the middleman, picked at the peak of perfection.
                 </p>
 

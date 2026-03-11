@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingBag, Search, Menu, X, LogIn } from 'lucide-react';
+import { Wheat, Search, Menu, X, LogIn } from 'lucide-react';
 
 const Navbar = () => {
     const navigate = useNavigate();
@@ -13,7 +13,7 @@ const Navbar = () => {
                     {/* Logo */}
                     <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
                         <div className="bg-green-600 p-2 rounded-xl text-white">
-                            <ShoppingBag size={24} />
+                            <Wheat size={24} />
                         </div>
                         <span className="text-2xl font-extrabold text-green-800 tracking-tighter">FarmFresh</span>
                     </div>
