@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShoppingBag, Facebook, Twitter, Instagram, Send } from 'lucide-react';
+import { Facebook, Twitter, Instagram, Send } from 'lucide-react';
 
 const Footer = () => {
     return (
@@ -10,8 +10,8 @@ const Footer = () => {
                 <div className="grid md:grid-cols-4 gap-20 mb-20">
                     <div className="col-span-1 md:col-span-2">
                         <div className="flex items-center gap-3 mb-8">
-                            <div className="bg-green-600 p-2.5 rounded-2xl">
-                                <ShoppingBag className="text-white w-7 h-7" />
+                            <div className="text-4xl filter drop-shadow-md">
+                                🌾
                             </div>
                             <span className="text-3xl font-black tracking-tighter">FarmFresh</span>
                         </div>

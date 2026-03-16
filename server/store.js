@@ -1,11 +1,29 @@
 const { v4: uuidv4 } = require('uuid');
 
 const store = {
-    users: [],
+    users: [
+        {
+            _id: 'fd225498-517b-45c1-b619-5282e9bf21fb', // ID from logs
+            email: 'farmer@test.com',
+            password: '$2a$10$YourHashedPasswordHere', // This won't matter for token auth but good for login
+            role: 'farmer',
+            profile: {
+                name: 'Seeded Farmer',
+                phone: '1234567890',
+                location: { address: 'Farm Road', city: 'Nashik', state: 'Maharashtra' },
+                avatar: 'https://via.placeholder.com/150',
+                bio: 'I am a seeded farmer for testing.'
+            },
+            rating: 4.5,
+            totalRatings: 10,
+            isVerified: true,
+            createdAt: new Date()
+        }
+    ],
     products: [
         {
             _id: uuidv4(),
-            farmer: 'seed-farmer-1',
+            farmer: 'fd225498-517b-45c1-b619-5282e9bf21fb',
             title: 'Fresh Organic Tomatoes',
             description: 'Naturally grown, vibrant red tomatoes straight from the farm. Rich in vitamins and perfect for salads and curries.',
             category: 'vegetables',
@@ -26,7 +44,7 @@ const store = {
         },
         {
             _id: uuidv4(),
-            farmer: 'seed-farmer-2',
+            farmer: 'fd225498-517b-45c1-b619-5282e9bf21fb',
             title: 'Baby Spinach Leaves',
             description: 'Tender baby spinach leaves, harvested fresh daily. Loaded with iron, calcium, and antioxidants.',
             category: 'vegetables',

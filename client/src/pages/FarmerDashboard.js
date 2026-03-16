@@ -29,6 +29,7 @@ import {
 import { productAPI, orderAPI } from '../services/api';
 import useStore from '../store/useStore';
 import toast from 'react-hot-toast';
+import AIPricePrediction from '../components/AIPricePrediction';
 
 const mockSalesData = [
   { name: 'Mon', sales: 4000 },
@@ -195,6 +196,9 @@ function FarmerDashboard() {
         <main className="flex-1 overflow-y-auto bg-gray-50/50 p-4 sm:p-6 lg:p-8">
           {activeTab === 'dashboard' && (
             <div className="max-w-[1400px] mx-auto space-y-8 animate-fade-in">
+
+              {/* AI Price Prediction Card */}
+              <AIPricePrediction />
 
               {/* Stats Grid - 4 in a row desktop */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
