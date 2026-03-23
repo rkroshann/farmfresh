@@ -1,16 +1,19 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   Container, Paper, TextField, Button, Typography, Box,
   AppBar, Toolbar, IconButton, Grid, MenuItem, Switch,
-  FormControlLabel, InputAdornment
+  FormControlLabel, InputAdornment, Alert
 } from '@mui/material';
-import { ArrowBack, Save, CloudUpload } from '@mui/icons-material';
+import { ArrowBack, CloudUpload, Save } from '@mui/icons-material';
 import { productAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
 function CreateListing() {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const isEditing = Boolean(id);
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -19,10 +22,44 @@ function CreateListing() {
     quantity: '',
     unit: 'kg',
     availableTo: '',
-    organic: false
+    organic: false,
+    deliveryPickup: true,
+    deliveryDelivery: false,
+    deliveryRadius: '10',
+    deliveryFee: '0'
   });
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isEditing) {
+      fetchProduct();
+    }
+  }, [id]);
+
+  const fetchProduct = async () => {
+    try {
+      const response = await productAPI.getById(id);
+      const product = response.data.data.product;
+      setFormData({
+        title: product.title,
+        description: product.description,
+        category: product.category,
+        basePrice: product.basePrice,
+        quantity: product.quantity,
+        unit: product.unit,
+        availableTo: product.availableTo.split('T')[0],
+        organic: product.organic,
+        deliveryPickup: product.deliveryOptions.pickup,
+        deliveryDelivery: product.deliveryOptions.delivery,
+        deliveryRadius: product.deliveryOptions.deliveryRadius,
+        deliveryFee: product.deliveryOptions.deliveryFee
+      });
+    } catch (error) {
+      toast.error('Failed to load product');
+      navigate('/farmer/dashboard');
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value, checked, type } = e.target;
@@ -42,15 +79,19 @@ function CreateListing() {
 
     try {
       const formDataToSend = new FormData();
+      
       Object.keys(formData).forEach(key => {
+        if (key.startsWith('delivery')) {
+          return;
+        }
         formDataToSend.append(key, formData[key]);
       });
 
       const deliveryOptions = {
-        pickup: true,
-        delivery: false,
-        deliveryRadius: 10,
-        deliveryFee: 0
+        pickup: formData.deliveryPickup,
+        delivery: formData.deliveryDelivery,
+        deliveryRadius: formData.deliveryRadius,
+        deliveryFee: formData.deliveryFee
       };
       formDataToSend.append('deliveryOptions', JSON.stringify(deliveryOptions));
 
@@ -58,11 +99,17 @@ function CreateListing() {
         formDataToSend.append('images', image);
       });
 
-      await productAPI.create(formDataToSend);
-      toast.success('Product listed successfully!');
+      if (isEditing) {
+        await productAPI.update(id, formDataToSend);
+        toast.success('Product updated successfully');
+      } else {
+        await productAPI.create(formDataToSend);
+        toast.success('Product listed successfully');
+      }
+
       navigate('/farmer/dashboard');
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to create listing');
+      toast.error(error.response?.data?.message || 'Failed to save product');
     } finally {
       setLoading(false);
     }
@@ -76,7 +123,7 @@ function CreateListing() {
             <ArrowBack />
           </IconButton>
           <Typography variant="h6" sx={{ ml: 2 }}>
-            Create New Listing
+            {isEditing ? 'Edit Listing' : 'Create New Listing'}
           </Typography>
         </Toolbar>
       </AppBar>
@@ -84,6 +131,10 @@ function CreateListing() {
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Paper sx={{ p: 4 }}>
           <form onSubmit={handleSubmit}>
+            <Typography variant="h5" gutterBottom>
+              Product Details
+            </Typography>
+
             <TextField
               fullWidth
               label="Product Title"
@@ -197,28 +248,82 @@ function CreateListing() {
               sx={{ mt: 2 }}
             />
 
-            <Box sx={{ mt: 3 }}>
-              <Button
-                variant="outlined"
-                component="label"
-                startIcon={<CloudUpload />}
-                fullWidth
-              >
-                Upload Images (Optional)
-                <input
-                  type="file"
-                  hidden
-                  multiple
-                  accept="image/*"
-                  onChange={handleImageChange}
+            <Typography variant="h6" sx={{ mt: 3, mb: 2 }}>
+              Delivery Options
+            </Typography>
+
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={formData.deliveryPickup}
+                  onChange={handleChange}
+                  name="deliveryPickup"
                 />
-              </Button>
-              {images.length > 0 && (
-                <Typography variant="caption" color="success.main" sx={{ mt: 1, display: 'block' }}>
-                  {images.length} image(s) selected
-                </Typography>
-              )}
-            </Box>
+              }
+              label="Pickup Available"
+            />
+
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={formData.deliveryDelivery}
+                  onChange={handleChange}
+                  name="deliveryDelivery"
+                />
+              }
+              label="Home Delivery Available"
+            />
+
+            {formData.deliveryDelivery && (
+               <Grid container spacing={2} sx={{ mt: 1 }}>
+                <Grid item xs={6}>
+                  <TextField
+                    fullWidth
+                    label="Delivery Radius (km)"
+                    name="deliveryRadius"
+                    type="number"
+                    value={formData.deliveryRadius}
+                    onChange={handleChange}
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    fullWidth
+                    label="Delivery Fee (₹)"
+                    name="deliveryFee"
+                    type="number"
+                    value={formData.deliveryFee}
+                    onChange={handleChange}
+                  />
+                </Grid>
+              </Grid>
+            )}
+
+            <Typography variant="h6" sx={{ mt: 3, mb: 2 }}>
+              Product Images
+            </Typography>
+
+            <Button
+              variant="outlined"
+              component="label"
+              startIcon={<CloudUpload />}
+              fullWidth
+            >
+              Upload Images (Max 5)
+              <input
+                type="file"
+                hidden
+                multiple
+                accept="image/*"
+                onChange={handleImageChange}
+              />
+            </Button>
+
+            {images.length > 0 && (
+              <Alert severity="success" sx={{ mt: 2 }}>
+                {images.length} image(s) selected
+              </Alert>
+            )}
 
             <Button
               type="submit"
@@ -229,7 +334,7 @@ function CreateListing() {
               startIcon={<Save />}
               sx={{ mt: 4 }}
             >
-              {loading ? 'Creating...' : 'Create Listing'}
+              {loading ? 'Saving...' : isEditing ? 'Update Product' : 'Create Listing'}
             </Button>
           </form>
         </Paper>

@@ -230,7 +230,7 @@ router.delete('/:id', [auth, requireRole('farmer')], async (req, res) => {
 router.get('/farmer/:farmerId', async (req, res) => {
   try {
     const products = store.products
-      .filter(p => p.farmer === req.params.farmerId && p.status === 'active')
+      .filter(p => p.farmer === req.params.farmerId)
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     res.json({ success: true, data: { products } });

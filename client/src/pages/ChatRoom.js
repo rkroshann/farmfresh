@@ -1,22 +1,19 @@
 import React from 'react';
-import { Container, Typography, Box, Button } from '@mui/material';
+import { Container, Typography, Button, Box } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { ArrowBack } from '@mui/icons-material';
 
 function ChatRoom() {
   const navigate = useNavigate();
-  
   return (
     <Container sx={{ py: 4 }}>
-      <Button startIcon={<ArrowBack />} onClick={() => navigate(-1)} sx={{ mb: 2 }}>
+      <Button startIcon={<ArrowBack />} onClick={() => navigate(-1)}>
         Back
       </Button>
-      <Box sx={{ textAlign: 'center', mt: 8 }}>
-        <Typography variant="h4" gutterBottom>
-          💬 Chat Room
-        </Typography>
+      <Box sx={{ textAlign: 'center', mt: 4 }}>
+        <Typography variant="h4">Chat Room</Typography>
         <Typography color="text.secondary" sx={{ mt: 2 }}>
-          Real-time chat will be implemented here using Socket.io
+          This page is under development
         </Typography>
       </Box>
     </Container>
