@@ -5,6 +5,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { Toaster } from 'react-hot-toast';
 import { SocketProvider } from './contexts/SocketContext';
 import useStore from './store/useStore';
+import SplashScreen from './components/SplashScreen';
 
 // Pages
 import Login from './pages/Login';
@@ -95,9 +96,16 @@ const PublicRoute = ({ children }) => {
 };
 
 function App() {
+  const [showSplash, setShowSplash] = React.useState(true);
+
+  const handleSplashComplete = React.useCallback(() => {
+    setShowSplash(false);
+  }, []);
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
       <Router>
         <SocketProvider>
           <Routes>
