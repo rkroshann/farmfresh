@@ -18,6 +18,20 @@ const store = {
             totalRatings: 10,
             isVerified: true,
             createdAt: new Date()
+        },
+        {
+            _id: 'c7b9e0f3-d5a2-4e1b-8c4d-6f2a7e9b1c3d',
+            email: 'customer@test.com',
+            password: '$2a$10$h3J8/Ox.kNzdjH2BuBsbOeZsA07CQ8TPwvtZipOt.mpIWQQoB0Rxa', // hash for 'customer123'
+            role: 'buyer',
+            profile: {
+                name: 'Test Customer',
+                phone: '0987654321',
+                location: { address: 'Buyer Lane', city: 'Mumbai', state: 'Maharashtra' },
+                avatar: 'https://via.placeholder.com/150',
+                bio: 'I am a seeded customer for testing.'
+            },
+            createdAt: new Date()
         }
     ],
     products: [
