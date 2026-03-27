@@ -129,6 +129,15 @@ function Marketplace() {
             >
               Orders
             </Button>
+            {isAuthenticated && user?.role === 'farmer' && (
+              <Button
+                color="inherit"
+                onClick={() => navigate('/ai-prediction')}
+                sx={{ fontWeight: 'bold', '&:hover': { color: '#2e7d32' } }}
+              >
+                AI Insights
+              </Button>
+            )}
             <Button
               color="inherit"
               onClick={() => navigate('/chats')}
@@ -211,10 +220,16 @@ function Marketplace() {
               <>
                 <Divider sx={{ my: 2 }} />
                 {user?.role === 'farmer' && (
-                  <ListItem button onClick={() => { navigate('/farmer/dashboard'); setDrawerOpen(false); }}>
-                    <ListItemIcon><Dashboard color="primary" /></ListItemIcon>
-                    <ListItemText primary="Farmer Dashboard" primaryTypographyProps={{ fontWeight: 600 }} />
-                  </ListItem>
+                  <>
+                    <ListItem button onClick={() => { navigate('/farmer/dashboard'); setDrawerOpen(false); }}>
+                      <ListItemIcon><Dashboard color="primary" /></ListItemIcon>
+                      <ListItemText primary="Farmer Dashboard" primaryTypographyProps={{ fontWeight: 600 }} />
+                    </ListItem>
+                    <ListItem button onClick={() => { navigate('/ai-prediction'); setDrawerOpen(false); }}>
+                      <ListItemIcon><Star color="primary" /></ListItemIcon>
+                      <ListItemText primary="AI Insights" primaryTypographyProps={{ fontWeight: 600 }} />
+                    </ListItem>
+                  </>
                 )}
                 <ListItem button onClick={() => { navigate('/chats'); setDrawerOpen(false); }}>
                   <ListItemIcon><Chat color="primary" /></ListItemIcon>

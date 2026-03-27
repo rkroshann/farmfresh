@@ -1,6 +1,7 @@
 fastapi>=0.110.0
 uvicorn>=0.29.0
-scikit-learn>=1.4.1
-pandas>=2.2.1
-numpy>=1.26.4
+scikit-learn==1.3.0
+# Pin numpy <2 for sklearn 1.3 compatibility and for loading the persisted model.
+numpy==1.26.4
+pandas==2.2.3
 joblib>=1.3.2

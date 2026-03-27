@@ -98,7 +98,7 @@ const OrderSuccess = () => {
               >
                 <div className="flex items-center gap-3">
                   <ShoppingBag className="w-5 h-5" />
-                  <span>View All Orders</span>
+                  <span>View Orders</span>
                 </div>
                 <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
@@ -108,7 +108,7 @@ const OrderSuccess = () => {
                 className="w-full flex items-center justify-center gap-3 p-4 bg-gray-800 text-white rounded-xl hover:bg-gray-900 transition-colors font-bold shadow-lg shadow-gray-200"
               >
                 <Home className="w-5 h-5" />
-                <span>Return to Home</span>
+                <span>Go to Home</span>
               </button>
             </div>
           </div>

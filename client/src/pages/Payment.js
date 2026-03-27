@@ -86,9 +86,9 @@ const Payment = () => {
         <nav className="flex text-sm text-gray-500 items-center gap-2 mb-8">
           <span className="hover:text-green-600 cursor-pointer" onClick={() => navigate('/cart')}>Cart</span>
           <ChevronRight className="w-4 h-4" />
-          <span className="text-green-600 font-semibold">Payment</span>
+          <span>Checkout</span>
           <ChevronRight className="w-4 h-4" />
-          <span>Success</span>
+          <span className="text-green-600 font-semibold">Payment</span>
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -278,6 +278,7 @@ const Payment = () => {
                     <div className="flex-1">
                       <h4 className="font-semibold text-gray-800 text-sm line-clamp-1">{item.name}</h4>
                       <p className="text-gray-500 text-xs">Qty: {item.quantity}</p>
+                      <p className="text-gray-500 text-xs">₹{item.price} per item</p>
                       <p className="text-green-600 font-bold text-sm">₹{item.price * item.quantity}</p>
                     </div>
                   </div>
@@ -290,11 +291,11 @@ const Payment = () => {
                   <span>₹{subtotal}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
-                  <span>Delivery Fee</span>
+                  <span>Delivery charge</span>
                   <span>₹{deliveryFee}</span>
                 </div>
                 <div className="flex justify-between text-xl font-extrabold text-gray-800 pt-2 border-t mt-4">
-                  <span>Total</span>
+                  <span>Final total</span>
                   <span className="text-green-600">₹{total}</span>
                 </div>
               </div>

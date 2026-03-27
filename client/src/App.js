@@ -20,6 +20,9 @@ import OrderDetail from './pages/OrderDetail';
 import Profile from './pages/Profile';
 import CartPage from './pages/CartPage';
 import LandingPage from './pages/LandingPage';
+import Payment from './pages/Payment';
+import OrderSuccess from './pages/OrderSuccess';
+import AIPredictionPage from './pages/AIPredictionPage';
 
 // Theme
 const theme = createTheme({
@@ -118,6 +121,8 @@ function App() {
             <Route path="/marketplace" element={<Marketplace />} />
             <Route path="/products/:id" element={<ProductDetail />} />
             <Route path="/cart" element={<CartPage />} />
+            <Route path="/payment" element={<Payment />} />
+            <Route path="/order-success" element={<OrderSuccess />} />
 
             {/* Protected Routes */}
             <Route
@@ -167,6 +172,14 @@ function App() {
               element={
                 <ProtectedRoute requiredRole="farmer">
                   <FarmerDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/ai-prediction"
+              element={
+                <ProtectedRoute requiredRole="farmer">
+                  <AIPredictionPage />
                 </ProtectedRoute>
               }
             />

@@ -310,7 +310,7 @@ function CartPage() {
                                         boxShadow: '0 6px 20px rgba(76, 175, 80, 0.5)',
                                     }
                                 }}
-                                onClick={() => toast.success('Order placed successfully! OUR farm team will contact you soon. 🌾')}
+                                onClick={() => navigate('/payment')}
                             >
                                 Place Order — ₹{totalPrice + 30}
                             </Button>

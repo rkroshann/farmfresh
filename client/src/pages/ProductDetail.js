@@ -13,6 +13,7 @@ import {
 import { productAPI, chatAPI, orderAPI } from '../services/api';
 import useStore from '../store/useStore';
 import toast from 'react-hot-toast';
+import { addToCart, updateQuantity } from '../utils/cartManager';
 
 function ProductDetail() {
   const { id } = useParams();
@@ -103,21 +104,19 @@ function ProductDetail() {
     }
 
     try {
-      const response = await orderAPI.create({
-        productId: product._id,
-        farmerId: product.farmer._id,
-        agreedPrice: product.basePrice,
-        quantity: orderQuantity,
-        deliveryMethod,
-        paymentMethod: 'cod',
-        deliveryAddress: deliveryMethod === 'delivery' ? user.profile.location : null
-      });
+      // Dummy checkout flow: move to payment screen with cart-based summary.
+      // We keep it cart-driven so Payment page can show a realistic summary.
+      const updatedCart = addToCart(product);
+      const pid = product._id;
+      if (pid) {
+        updateQuantity(pid, orderQuantity);
+      }
 
-      toast.success('Order placed successfully!');
-      navigate(`/orders/${response.data.data.order._id}`);
+      toast.success('Proceeding to secure payment...');
+      navigate('/payment');
       setOrderDialog(false);
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to place order');
+      toast.error(error.response?.data?.message || 'Failed to continue to payment');
     }
   };
 
